@@ -18,18 +18,22 @@ class _FakeCreditsNotifier extends CreditsNotifier {
 
 class _FakeChannelNotifier extends ChannelNotifier {
   @override
-  ChannelState build() => ChannelState(
-    channels: [
-      Channel(
-        id: '1',
-        name: 'general',
-        description: 'General talk',
-        organisationId: 'org1',
-        ownerId: 'u1',
-        membersCount: 1,
-        isJoined: true,
-      ),
-    ],
+  Future<List<Channel>> build() async => [
+    Channel(
+      id: '1',
+      name: 'general',
+      description: 'General talk',
+      organisationId: 'org1',
+      ownerId: 'u1',
+      membersCount: 1,
+    ),
+  ];
+}
+
+class _FakeWorkspaceNotifier extends WorkspaceNotifier {
+  @override
+  WorkspaceState build() => const WorkspaceState(
+    selectedWorkspace: Workspace(id: 'org1', name: 'Workspace', avatar: ''),
   );
 }
 
@@ -59,13 +63,35 @@ class _FakeUserProfileNotifier extends UserProfileNotifier {
   }
 }
 
+class _MemorySecureStorage extends SecureStorageService {
+  final _values = <String, String>{};
+
+  @override
+  Future<String?> readData(String key) async => _values[key];
+
+  @override
+  Future<void> writeData(String key, String value) async =>
+      _values[key] = value;
+
+  @override
+  Future<void> deleteValue(String key) async => _values.remove(key);
+}
+
 Widget _buildHomeView(_FakeUserProfileNotifier userProfileNotifier) {
   return ProviderScope(
     overrides: [
       authNotifierProvider.overrideWith(_FakeAuthNotifier.new),
       creditsNotifierProvider.overrideWith(_FakeCreditsNotifier.new),
       channelProvider.overrideWith(_FakeChannelNotifier.new),
+      workspaceProvider.overrideWith(_FakeWorkspaceNotifier.new),
       userProfileNotifierProvider.overrideWith(() => userProfileNotifier),
+      dmDraftStoreProvider.overrideWith(
+        (ref) => DmDraftStore(
+          _MemorySecureStorage(),
+          userId: 'user-1',
+          orgId: 'org1',
+        ),
+      ),
     ],
     child: MaterialApp(theme: AppTheme.light, home: const HomeView()),
   );
