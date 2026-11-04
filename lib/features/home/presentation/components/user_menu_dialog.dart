@@ -103,7 +103,7 @@ class UserMenuDialog extends ConsumerWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '$balance AI credits',
+                                '$balance AI ${balance == 1 ? 'credit' : 'credits'}',
                                 style: TextStyle(
                                   color: colors.primary,
                                   fontSize: 12,

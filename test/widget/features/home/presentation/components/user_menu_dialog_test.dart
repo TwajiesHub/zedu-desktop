@@ -85,11 +85,11 @@ User _buildUser({bool online = true}) => User(
 
 /// Hosts the dialog the same way the sidebar rail opens it (showDialog), so
 /// popping the menu leaves the app tree mounted for the error toast.
-Widget buildHost(FakeAuthNotifier notifier) {
+Widget buildHost(FakeAuthNotifier notifier, {int balance = 0}) {
   return ProviderScope(
     overrides: [
       authNotifierProvider.overrideWith(() => notifier),
-      orgCreditBalanceProvider.overrideWithValue(0),
+      orgCreditBalanceProvider.overrideWithValue(balance),
     ],
     child: buildTestMaterialApp(
       Scaffold(
@@ -111,9 +111,10 @@ Widget buildHost(FakeAuthNotifier notifier) {
 
 Future<void> pumpOpenMenu(
   WidgetTester tester,
-  FakeAuthNotifier notifier,
-) async {
-  await tester.pumpWidget(buildHost(notifier));
+  FakeAuthNotifier notifier, {
+  int balance = 0,
+}) async {
+  await tester.pumpWidget(buildHost(notifier, balance: balance));
   await tester.pump();
   await tester.tap(find.text('open menu'));
   await tester.pumpAndSettle();
@@ -125,6 +126,29 @@ AuthState readAuthState(WidgetTester tester) {
 }
 
 void main() {
+  for (final entry in {
+    0: '0 AI credits',
+    1: '1 AI credit',
+    2: '2 AI credits',
+  }.entries) {
+    testWidgets('AI credit wording for a balance of ${entry.key}', (
+      tester,
+    ) async {
+      await pumpOpenMenu(
+        tester,
+        FakeAuthNotifier(
+          initial: AuthState(
+            status: AuthStatus.authenticated,
+            user: _buildUser(),
+          ),
+        ),
+        balance: entry.key,
+      );
+
+      expect(find.text(entry.value), findsOneWidget);
+    });
+  }
+
   group('UserMenuDialog presence toggle', () {
     testWidgets('shows Active presence with an away action while online', (
       tester,
